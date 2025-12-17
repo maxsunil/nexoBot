@@ -47,7 +47,7 @@ export default async function DashboardLayout({
             <div className="flex items-center">
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-700">
-                  {user.email}
+                  {user.email as string}
                 </p>
                 <form action="/api/auth/logout" method="post">
                   <button
