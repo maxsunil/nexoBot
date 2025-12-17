@@ -48,7 +48,54 @@ export async function POST(request: Request) {
             to: email,
             subject: 'Your Login OTP',
             text: `Your login OTP is: ${otp}. It expires in 10 minutes.`,
-            html: `<p>Your login OTP is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`,
+            html: `
+                <div style="background:#f1f5f9;padding:40px 0;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;">
+                <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.08);overflow:hidden">
+
+                    <!-- Header -->
+                    <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:24px;text-align:center">
+                    <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:600">
+                        Verify your login
+                    </h1>
+                    </div>
+
+                    <!-- Body -->
+                    <div style="padding:32px;color:#334155;font-size:15px;line-height:1.6">
+                    <p style="margin-top:0">Hi 👋</p>
+
+                    <p>
+                        Use the following One-Time Password (OTP) to complete your login.
+                        This OTP is valid for <strong>10 minutes</strong>.
+                    </p>
+
+                    <!-- OTP Box -->
+                    <div style="margin:28px 0;padding:20px;text-align:center;background:#f8fafc;border-radius:12px;border:1px dashed #c7d2fe">
+                        <div style="font-size:32px;font-weight:700;letter-spacing:10px;color:#111827">
+                        ${otp}
+                        </div>
+                        <div style="margin-top:10px;font-size:13px;color:#64748b">
+                        Do not share this code with anyone
+                        </div>
+                    </div>
+
+                    <p>
+                        If you didn’t request this login, you can safely ignore this email.
+                    </p>
+
+                    <p style="margin-bottom:0">
+                        Thanks,<br />
+                        <strong>AI Chatbot Team</strong>
+                    </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="background:#f8fafc;padding:16px;text-align:center;font-size:12px;color:#94a3b8">
+                    © ${new Date().getFullYear()} AI Chatbot. All rights reserved.
+                    </div>
+
+                </div>
+                </div>
+                `,
         });
 
         console.log('Message sent: %s', info.messageId);
