@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Bot, LogOut, Plus, LayoutDashboard } from 'lucide-react'
@@ -8,15 +8,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const session = await getSession()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!session) {
     redirect('/login')
   }
+
+  const user = session // session object has id, email, etc.
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -51,7 +49,7 @@ export default async function DashboardLayout({
                 <p className="text-sm font-medium text-gray-700">
                   {user.email}
                 </p>
-                <form action="/auth/signout" method="post">
+                <form action="/api/auth/logout" method="post">
                   <button
                     type="submit"
                     className="flex items-center text-xs font-medium text-gray-500 hover:text-gray-700 mt-1"

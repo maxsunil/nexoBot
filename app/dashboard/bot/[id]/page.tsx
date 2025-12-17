@@ -1,7 +1,9 @@
-import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
+import { getSession } from '@/lib/auth'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Copy, ExternalLink, Settings } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
+import EmbedCodeViewer from './components/EmbedCodeViewer'
 
 export default async function BotDetailsPage({
   params,
@@ -9,13 +11,10 @@ export default async function BotDetailsPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const supabase = await createClient()
+  const session = await getSession()
+  const supabase = createAdminClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!session) {
     redirect('/login')
   }
 
@@ -23,7 +22,7 @@ export default async function BotDetailsPage({
     .from('chatbots')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('user_id', session.id)
     .single()
 
   if (!bot) {
@@ -100,11 +99,7 @@ export default async function BotDetailsPage({
           </p>
         </div>
         <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <div className="relative rounded-md shadow-sm">
-            <pre className="block w-full rounded-md border-gray-300 bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm">
-              {iframeCode}
-            </pre>
-          </div>
+          <EmbedCodeViewer code={iframeCode} />
         </div>
       </div>
     </div>

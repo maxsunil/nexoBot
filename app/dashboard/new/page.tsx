@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
 import { Loader2 } from 'lucide-react'
 
 export default function NewChatbotPage() {
@@ -11,7 +10,6 @@ export default function NewChatbotPage() {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,29 +29,28 @@ export default function NewChatbotPage() {
 
       const { systemPrompt } = await promptResponse.json()
 
-      // 2. Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) throw new Error('Not authenticated')
-
-      // 3. Save to Supabase
-      const { error } = await supabase.from('chatbots').insert({
-        user_id: user.id,
-        name,
-        brand_name: brandName,
-        description,
-        system_prompt: systemPrompt,
+      // 2. Create Chatbot via API (since we are using native auth)
+      const createResponse = await fetch('/api/chatbots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              name,
+              brandName,
+              description,
+              systemPrompt
+          })
       })
 
-      if (error) throw error
+      if (!createResponse.ok) {
+           const errData = await createResponse.json();
+           throw new Error(errData.error || 'Failed to create chatbot');
+      }
 
       router.push('/dashboard')
       router.refresh()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating chatbot:', error)
-      alert('Failed to create chatbot. Please try again.')
+      alert(error.message || 'Failed to create chatbot. Please try again.')
     } finally {
       setLoading(false)
     }

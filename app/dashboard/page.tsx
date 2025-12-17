@@ -1,4 +1,5 @@
-import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
+import { getSession } from '@/lib/auth'
 import Link from 'next/link'
 import { Plus, MessageSquare, Code, Bot, TrendingUp, Users, Sparkles } from 'lucide-react'
 import StatsCard from './components/StatsCard'
@@ -6,36 +7,19 @@ import ConversationList from './components/ConversationList'
 import ChatbotList from './components/ChatbotList'
 import AnalyticsChart from './components/AnalyticsChart'
 
-async function getAnalytics() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analytics`, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching analytics:', error);
-    return null;
-  }
-}
-
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const session = await getSession()
+  const supabase = createAdminClient()
+  
+  // Note: We use 'session' which is our custom JWT payload.
+  // It should contain 'id' which matches the user_id in tables.
+  
+  if (!session) return null; // Should be handled by layout
 
   const { data: chatbots } = await supabase
     .from('chatbots')
     .select('*')
-    .eq('user_id', user?.id)
+    .eq('user_id', session.id)
     .order('created_at', { ascending: false })
 
   // Fetch conversations
