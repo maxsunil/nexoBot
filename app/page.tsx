@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Bot, Sparkles, Code, Zap, Check, ArrowRight, MessageCircle, Copy, CheckCircle, Menu, X, Star, Users, TrendingUp, Shield } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Home() {
   const [copiedStep, setCopiedStep] = useState<number | null>(null)
@@ -159,12 +160,12 @@ export default function Home() {
               <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Features</a>
               <a href="#integration" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Integration</a>
               <a href="#pricing" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Pricing</a>
-              <button className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+              <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 Sign In
-              </button>
-              <button className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full transition-all transform hover:scale-105 hover:shadow-lg">
+              </Link>
+              <Link href="/signup" className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full transition-all transform hover:scale-105 hover:shadow-lg">
                 Get Started
-              </button>
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
