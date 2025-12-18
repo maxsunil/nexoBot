@@ -4,22 +4,34 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
     try {
-        const { messages, publicId } = await req.json();
+        const { messages, publicId, conversationId } = await req.json();
 
         if (!publicId) {
             return new Response('Missing publicId', { status: 400 });
         }
 
         const supabase = await createClient();
+
+        // Fetch chatbot info and FAQs
         const { data: chatbot } = await supabase
             .from('chatbots')
-            .select('system_prompt')
+            .select('id, system_prompt')
             .eq('public_id', publicId)
             .single();
 
         if (!chatbot) {
             return new Response('Chatbot not found', { status: 404 });
         }
+
+        const { data: faqs } = await supabase
+            .from('faqs')
+            .select('question, answer')
+            .eq('chatbot_id', chatbot.id);
+
+        // Build FAQ context
+        const faqContext = faqs && faqs.length > 0
+            ? `\n\nFrequently Asked Questions:\n${faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n')}`
+            : '';
 
         const openai = new OpenAI({
             baseURL: "https://openrouter.ai/api/v1",
@@ -30,8 +42,6 @@ export async function POST(req: Request) {
             },
         });
 
-        // Ensure messages are in the correct format for OpenAI SDK
-        // We might need to filter out any extra properties if the frontend sends them
         const apiMessages = messages.map((m: any) => ({
             role: m.role,
             content: m.content
@@ -40,12 +50,40 @@ export async function POST(req: Request) {
         const completion = await openai.chat.completions.create({
             model: "meta-llama/llama-3.3-70b-instruct:free",
             messages: [
-                { role: "system", content: chatbot.system_prompt },
+                { role: "system", content: chatbot.system_prompt + faqContext },
                 ...apiMessages
             ],
         });
 
         const aiMessage = completion.choices[0].message;
+
+        // Save messages if conversationId is provided
+        if (conversationId) {
+            const userMessage = messages[messages.length - 1];
+            await supabase.from('messages').insert([
+                {
+                    chatbot_id: chatbot.id,
+                    conversation_id: conversationId,
+                    role: 'user',
+                    content: userMessage.content
+                },
+                {
+                    chatbot_id: chatbot.id,
+                    conversation_id: conversationId,
+                    role: 'assistant',
+                    content: aiMessage.content
+                }
+            ]);
+
+            // Update conversation count and first message if needed
+            if (messages.length === 1) {
+                await supabase.from('conversations')
+                    .update({ first_message: userMessage.content })
+                    .eq('id', conversationId);
+            }
+
+            await supabase.rpc('increment_message_count', { conv_id: conversationId });
+        }
 
         return NextResponse.json(aiMessage);
 

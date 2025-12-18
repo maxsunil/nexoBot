@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ExternalLink } from 'lucide-react'
 import EmbedCodeViewer from './components/EmbedCodeViewer'
+import FAQManager from './components/FAQManager'
 
 export default async function BotDetailsPage({
   params,
@@ -86,6 +87,12 @@ export default async function BotDetailsPage({
               </dd>
             </div>
           </dl>
+        </div>
+      </div>
+
+      <div className="bg-white shadow sm:rounded-lg mb-8">
+        <div className="px-4 py-5 sm:px-6">
+          <FAQManager chatbotId={bot.id} />
         </div>
       </div>
 

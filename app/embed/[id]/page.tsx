@@ -19,23 +19,65 @@ export default function EmbedPage() {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Fetch brand name
+  // Initialize session and fetch bot info
   useEffect(() => {
-    const fetchBotInfo = async () => {
+    const init = async () => {
+      // Fetch bot info
       const supabase = createClient()
-      const { data } = await supabase
+      const { data: bot } = await supabase
         .from('chatbots')
-        .select('brand_name')
+        .select('id, brand_name')
         .eq('public_id', publicId)
         .single()
 
-      if (data) setBrandName(data.brand_name)
+      if (bot) {
+        setBrandName(bot.brand_name)
+        
+        // Handle session
+        let sid = localStorage.getItem(`chat_session_${publicId}`)
+        if (!sid) {
+          sid = Math.random().toString(36).substring(7)
+          localStorage.setItem(`chat_session_${publicId}`, sid)
+        }
+        setSessionId(sid)
+
+        // Find or create conversation
+        try {
+          const resp = await fetch('/api/conversations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chatbot_id: bot.id,
+              session_id: sid,
+            })
+          })
+          if (resp.ok) {
+            const conv = await resp.json()
+            setConversationId(conv.id)
+            
+            // Optionally fetch existing messages for this session
+            const { data: existingMessages } = await supabase
+              .from('messages')
+              .select('role, content')
+              .eq('conversation_id', conv.id)
+              .order('created_at', { ascending: true })
+            
+            if (existingMessages && existingMessages.length > 0) {
+              setMessages(existingMessages as Message[])
+            }
+          }
+        } catch (err) {
+          console.error('Error syncing conversation:', err)
+        }
+      }
       setLoading(false)
     }
 
-    if (publicId) fetchBotInfo()
+    if (publicId) init()
   }, [publicId])
 
   // Handle background transparency and resizing messages
@@ -72,7 +114,8 @@ export default function EmbedPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          publicId
+          publicId,
+          conversationId // Pass conversationId to save messages
         })
       })
 
@@ -80,6 +123,15 @@ export default function EmbedPage() {
 
       const aiMessage = await response.json()
       setMessages(prev => [...prev, { role: 'assistant', content: aiMessage.content }])
+
+      // Trigger summarization check (could be debounced or server-side)
+      if (messages.length > 3) {
+        fetch('/api/chat/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId })
+        }).catch(err => console.error('Summary error:', err))
+      }
 
     } catch (error) {
       console.error('Error sending message:', error)
